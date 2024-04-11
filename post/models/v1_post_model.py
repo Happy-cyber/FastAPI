@@ -1,9 +1,6 @@
 from typing import List
 from pydantic import BaseModel, model_validator
 from enum import Enum
-from bson import ObjectId
-
-from config.database import db
 from config.renderer import CustomError
 
 

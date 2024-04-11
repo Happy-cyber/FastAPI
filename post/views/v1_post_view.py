@@ -11,6 +11,7 @@ from config.database import db
 async def create_post(post_body: CreatePost, request: Request):
     current_datetime = get_current_datetime()
 
+    # Get user details in request
     user = request['state']['user']
 
     # Post Body
@@ -20,10 +21,42 @@ async def create_post(post_body: CreatePost, request: Request):
     post_body['updated_at'] = current_datetime
     post_body['deleted_at'] = current_datetime
 
+    # Update media using map function with lambda and enumerate to update dictionaries
+    post_body['media'] = list(
+        map(
+            lambda indexed_dict: {**indexed_dict[1], "id": indexed_dict[0] + 1},
+            enumerate(post_body['media'])
+        )
+    )
+
     # Get collection
     post_collection = db.get_collection("Post")
 
     # Insert post document
-    post_obj = post_collection.insert_one(post_body)
+    post_collection.insert_one(post_body)
 
     return CustomizeResponse(code=1, message="Post created successfully.", data=None)
+
+
+@router_v1.get("/post/list/", dependencies=[Depends(verify_token)])
+async def post_list(request: Request):
+    # Get collection
+    post_collection = db.get_collection("Post")
+
+    pipeline = [
+        {
+            "$addFields": {
+                "_id": {
+                    "$toString": "$_id"
+                }
+            }
+        },
+        {
+            "$sort": {
+                "created_at": -1
+            }
+        }
+    ]
+
+    data = list(post_collection.aggregate(pipeline))
+    return CustomizeResponse(code=1, message="Post get successfully.", data=data)
