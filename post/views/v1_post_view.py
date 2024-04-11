@@ -1,13 +1,15 @@
-from fastapi import Depends, Request
+from fastapi import APIRouter, Depends, Request
 
-from config.main import router_v1
 from config.renderer import CustomizeResponse
 from config.utils import verify_token, get_current_datetime
 from post.models.v1_post_model import CreatePost
 from config.database import db
 
 
-@router_v1.post("/post/create/", dependencies=[Depends(verify_token)])
+router = APIRouter(prefix="/post", dependencies=[Depends(verify_token)])
+
+
+@router.post("/create/")
 async def create_post(post_body: CreatePost, request: Request):
     current_datetime = get_current_datetime()
 
@@ -38,7 +40,7 @@ async def create_post(post_body: CreatePost, request: Request):
     return CustomizeResponse(code=1, message="Post created successfully.", data=None)
 
 
-@router_v1.get("/post/list/", dependencies=[Depends(verify_token)])
+@router.get("/list/")
 async def post_list(request: Request):
     # Get collection
     post_collection = db.get_collection("Post")

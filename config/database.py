@@ -1,6 +1,10 @@
+import environ
 from pymongo import MongoClient
 
-from main import env
+# ----------------------------------------------------------------------------------------------------------------------
+# Initial environment instance
+env = environ.Env()
+environ.Env.read_env()
 
 
 class Database:

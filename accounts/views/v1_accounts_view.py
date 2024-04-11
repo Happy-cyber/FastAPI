@@ -1,13 +1,16 @@
-from fastapi import Request, Depends
+from fastapi import APIRouter, Depends, Request
 from bson import ObjectId
+
 from config.database import db
-from config.main import router_v1
 from config.renderer import CustomizeResponse
 from accounts.models.v1_accounts_model import CreateUser, CreateToken, GetUserDetails, LoginUser, Logout
 from config.utils import get_current_datetime, generate_token, verify_token
 
 
-@router_v1.post("/create-user/")
+router = APIRouter(prefix="/auth")
+
+
+@router.post("/create-user/")
 async def create_user(user_body: CreateUser, token_body: CreateToken):
     current_datetime = get_current_datetime()
 
@@ -41,7 +44,7 @@ async def create_user(user_body: CreateUser, token_body: CreateToken):
     return CustomizeResponse(code=1, message="Document created successfully.", data=data)
 
 
-@router_v1.post("/login/")
+@router.post("/login/")
 async def login(login_body: LoginUser):
     # Login body
     login_body = login_body.dict()
@@ -68,7 +71,7 @@ async def login(login_body: LoginUser):
     return CustomizeResponse(code=1, message="User login successfully.", data=data)
 
 
-@router_v1.post("/logout/", dependencies=[Depends(verify_token)])
+@router.post("/logout/", dependencies=[Depends(verify_token)])
 async def logout(logout_body: Logout, request: Request):
     is_sign_out_all = logout_body.is_sign_out_all
 
