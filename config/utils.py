@@ -1,11 +1,16 @@
 import datetime
 import binascii
 import os
-from typing import Annotated
+import environ
 from fastapi import Header, Request
 
 from config.database import db
 from config.renderer import CustomError
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Initial environment instance
+env = environ.Env()
+environ.Env.read_env()
 
 
 # Get current UTC datetime
@@ -17,9 +22,18 @@ def generate_token():
     return binascii.hexlify(os.urandom(20)).decode()
 
 
-async def verify_token(Authorization: Annotated[str, Header()], request: Request):
+async def verify_api_key(api_key: str = Header(None)):
+    if not api_key:
+        raise CustomError(message="API authentication credentials were not provided.")
+
+    if api_key != env('API_KEY'):
+        # Return a 403 Forbidden response if the API key is invalid
+        raise CustomError(message="Invalid API key.", status_code=403)
+
+
+async def verify_token(request: Request, Authorization: str = Header(None)):
     if not Authorization:
-        raise CustomError(message="Authentication credentials were not provided.")
+        raise CustomError(message="User authentication credentials were not provided.")
     auth = Authorization.split()
 
     if len(auth) == 1:

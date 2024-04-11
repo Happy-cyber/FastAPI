@@ -3,11 +3,12 @@
 import environ
 import uvicorn
 
-from fastapi import FastAPI
-from fastapi import Request
+from fastapi import FastAPI, Depends, Request
 from fastapi.exceptions import RequestValidationError
-from config.renderer import CustomError, CustomizeResponse
 from starlette.responses import JSONResponse
+
+from config.renderer import CustomError
+from config.utils import verify_api_key
 
 from accounts.views import v1_accounts_view
 from post.views import v1_post_view
@@ -23,8 +24,8 @@ app = FastAPI()
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Define API routers for different versions
-app.include_router(v1_accounts_view.router, prefix="/api/v1")
-app.include_router(v1_post_view.router, prefix="/api/v1")
+app.include_router(v1_accounts_view.router, prefix="/api/v1", dependencies=[Depends(verify_api_key)])
+app.include_router(v1_post_view.router, prefix="/api/v1", dependencies=[Depends(verify_api_key)])
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -61,24 +62,6 @@ async def custom_error_handler(request: Request, exc):
         "message": message
     }
     return JSONResponse(status_code=status_code, content=data)
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Define a middleware function to check the API key
-async def api_key_middleware(request: Request, call_next: callable):
-    api_key = request.headers.get("API-Key")
-
-    if api_key != env('API_KEY'):
-        # Return a 403 Forbidden response if the API key is invalid
-        return CustomizeResponse(code=0, message="Invalid API key.", status_code=403)
-
-    # Call the next middleware or route handler
-    response = await call_next(request)
-    return response
-
-
-# Register the middleware with the FastAPI app
-app.middleware("http")(api_key_middleware)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Run main thread using uvicorn
